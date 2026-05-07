@@ -1,0 +1,63 @@
+{# templates/envios/lista.html #}
+
+{% extends 'base.html' %}
+
+{% block title %}Encomiendas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Encomiendas</h1>
+    <a href="{% url 'encomienda_crear' %}" class="btn btn-primary">Nueva Encomienda</a>
+</div>
+
+{# Formulario de busqueda y filtros #}
+<form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Buscar por cÃ³digo o remitente..." value="{{ request.GET.q }}">
+    </div>
+    <div class="col-md-3">
+        <select name="estado" class="form-select">
+            <option value="">Todos los estados</option>
+            {% for valor, etiqueta in estados %}
+                <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-secondary w-100">Filtrar</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>CÃ³digo</th>
+                <th>Remitente</th>
+                <th>Ruta</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enc in encomiendas %}
+            <tr>
+                <td>{{ enc.codigo }}</td>
+                <td>{{ enc.remitente.nombre_completo }}</td>
+                <td>{{ enc.ruta.origen }} â†’ {{ enc.ruta.destino }}</td>
+                <td>{{ enc.get_estado_display }}</td>
+                <td>{{ enc.fecha_registro|date:'d/m/Y' }}</td>
+                <td><a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-info">Ver</a></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No se encontraron encomiendas</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'partials/paginacion.html' with page_obj=encomiendas %}
+{% endblock %}
