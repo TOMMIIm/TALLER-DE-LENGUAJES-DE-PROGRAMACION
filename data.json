@@ -1,0 +1,10 @@
+{
+  "descripcion": "Laptop Gamer",
+  "peso_kg": "5.5",
+  "costo_envio": "40.00",
+  "remitente_id": 1,
+  "destinatario_id": 2,
+  "ruta_id": 1,
+  "estado": "PE",
+  "fecha_entrega_est": "2026-05-15"
+}

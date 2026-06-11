@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 from decouple import config
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -29,7 +30,11 @@ SECRET_KEY = 'django-insecure-3w-&9&$_ma&g@cs168(rzu*&hsfso@9q-&77f5k5p^_7pi)04x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+     'localhost',
+    '127.0.0.1',
+    'testserver',
+]
 
 
 # Application definition
@@ -44,10 +49,16 @@ INSTALLED_APPS = [
     'rutas',
     'envios',
     'clientes',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'django_filters',
+    'drf_spectacular',
+    'corsheaders',
 
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -56,6 +67,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if DEBUG:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+    SILKY_PYTHON_PROFILER = True
+    SILKY_META = True
 
 ROOT_URLCONF = 'config.urls'
 
@@ -145,4 +162,106 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 60 * 60 * 8
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_NAME = 'encomiendas_session'
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'EXCEPTION_HANDLER': 'api.exceptions.encomiendas_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',
+        'user': '500/hour',
+        'empleado': '100/min',
+        'cambio_estado': '30/hour',
+        'login_attempt': '5/min',
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 15,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_VERSIONING_CLASS': (
+        'rest_framework.versioning.URLPathVersioning'
+    ),
+    'ALLOWED_VERSIONS': ['v1', 'v2'],
+    'DEFAULT_VERSION': 'v1',
+    'VERSION_PARAM': 'version',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+}
+
+# JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+CACHE_TTL = 60 * 15
+
+# CORS
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [
+    'https://encomiendas-frontend.vercel.app',
+    'https://admin.encomiendas.pe',
+    'http://localhost:3000',
+    'http://localhost:5173',
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'authorization',
+    'content-type',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API Sistema de Gestión de Encomiendas',
+    'DESCRIPTION': '''
+ API REST para gestionar el ciclo de vida de encomiendas.
+ Incluye registro de envíos, cambio de estado, historial y estadísticas del sistema.
+''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SORT_OPERATIONS': False,
+    'TAGS': [
+        {'name': 'Encomiendas', 'description': 'Gestión de envíos'},
+        {'name': 'Clientes', 'description': 'Listado de clientes activos'},
+        {'name': 'Rutas', 'description': 'Rutas disponibles'},
+        {'name': 'Auth', 'description': 'Autenticación JWT'},
+    ],
+}
 

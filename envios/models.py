@@ -112,7 +112,10 @@ class Encomienda(models.Model):
 
         # Regla 2: la fecha de entrega estimada no puede ser en el pasado
         if self.fecha_entrega_est:
-            if self.fecha_entrega_est < timezone.now().date():
+            if (
+                self.fecha_entrega_est < timezone.now().date()
+                and self.estado == EstadoEnvio.PENDIENTE
+            ):
                 errors['fecha_entrega_est'] = ValidationError(
                     'La fecha de entrega estimada no puede ser en el pasado.'
                 )
